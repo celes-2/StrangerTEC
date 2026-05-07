@@ -11,6 +11,7 @@ ventana.resizable(width=NO, height=NO)
 
 def mostrar_frame(frame):
     frame.tkraise()
+    pagina3
 
 
 def cargar_img(nombre):
@@ -21,6 +22,8 @@ def cargar_img(nombre):
 pagina1=tk.Frame(ventana,bg="gray")
 pagina2=tk.Frame(ventana,bg="gray")
 pagina3=tk.Frame(ventana,bg="gray")
+pagina4=tk.Frame(ventana,bg="gray")
+pagina5=tk.Frame(ventana,bg="gray")
 
 canvas2=Canvas(pagina2,width=2000,height=700,bg="#0C414B")
 canvas2.place(x=0,y=0)
@@ -28,41 +31,70 @@ canvas1=Canvas(pagina1,width=2000,height=700,bg='#0C414B')
 canvas1.place(x=0,y=0)
 canvas3=Canvas(pagina3,width=2000,height=700,bg='#0C414B')
 canvas3.place(x=0,y=0)
+canvas4=Canvas(pagina4,width=2000,height=700,bg='#0C414B')
+canvas4.place(x=0,y=0)
+canvas5=Canvas(pagina5,width=2000,height=700,bg='#0C414B')
+canvas5.place(x=0,y=0)
 
-siguiente3=tk.Button(pagina3, text="volver", command=lambda: mostrar_frame(pagina1),width=12, height=2)
+
+
+siguiente3=tk.Button(pagina3, text="volver", command=lambda: mostrar_frame(pagina4),width=12, height=2)
 siguiente3.place(x=350,y=550)
-siguiente1=tk.Button(pagina1, text="Siguiente", command=lambda: mostrar_frame(pagina2),width=12, height=2)
-siguiente1.place(x=500,y=550)
+
+siguiente1=tk.Button(pagina1, text="INICIO", command=lambda: mostrar_frame(pagina2),width=12, height=2)
+siguiente1.place(x=550,y=600)
+
 siguiente2=tk.Button(pagina2, text="Siguiente2", command=lambda: mostrar_frame(pagina3),width=12, height=2)
 siguiente2.place(x=350,y=550)
+siguiente4=tk.Button(pagina4, text="Siguiente4", command=lambda: mostrar_frame(pagina5),width=12, height=2)
+siguiente4.place(x=350,y=550)
+siguiente5=tk.Button(pagina5, text="Siguiente5", command=lambda: mostrar_frame(pagina1),width=12, height=2)
+siguiente5.place(x=350,y=550)
 
-canvas1.fondo = cargar_img('fondo5.png')
+canvas1.fondo = cargar_img('fondos4.png')
 Fondo1 = canvas1.create_image(0, 0, anchor=NW,  image=canvas1.fondo)
 
+canvas2.fondo = cargar_img('fondos.png')
+Fondo2 = canvas2.create_image(0, 0, anchor=NW,  image=canvas2.fondo)
 
-for frame in (pagina1,pagina2,pagina3):
+canvas3.fondo = cargar_img('fondos.png')
+Fondo3 = canvas3.create_image(0, 0, anchor=NW,  image=canvas3.fondo)
+
+canvas4.fondo = cargar_img('fondos.png')
+Fondo4 = canvas4.create_image(0, 0, anchor=NW,  image=canvas4.fondo)
+canvas5.fondo = cargar_img('fondos.png')
+Fondo5= canvas5.create_image(0, 0, anchor=NW,  image=canvas5.fondo)
+
+
+for frame in (pagina1,pagina2,pagina3,pagina4,pagina5):
     frame.grid(row=0, column=0, sticky="nsew")
-
-
 
 ventana.grid_rowconfigure(0, weight=1)
 ventana.grid_columnconfigure(0, weight=1)
 
+frases1=["HOLA","SADSA","SRFGB","HMBKJ","GJKM","DTFHN","DYTHGN","GHV","TYFHG","FGHVGJ"]
+frases=frases1.copy()
 
-frases=[]
 frase_juego = ""
 texto_morse = ""
+
 inicio = 0
 tiempo_pausas=0
 esperando=False
 boton_apretado=False
+
 precision_total = 0
 valor_correcto = 0
 valor_real=0
 puntos_precision=0
+
 jugador1=True
 jugador2=False
+
 puntos_totales=0
+
+entries_frases=[]
+panel=[]
 
 morse = {
 ".-":"A","-...":"B","-.-.":"C","-..":"D",".":"E",
@@ -74,87 +106,165 @@ morse = {
 ".....":"5","-....":"6","--...":"7","---..":"8","----.":"9","+":".-.-.","-":"-....-"
 }
 
+frame_panel = tk.Frame(pagina2, bg="gray")
+frame_panel.place(x=500, y=200)
+
+abecedario = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ1234567890+-"
+
+panel_letras = []
+
+fila = 0
+columna = 0
+
+for letra in abecedario: #Panel de letras
+
+    caracter = tk.Label(frame_panel,text=letra,font=("Times New Roman",10),width=3,height=2,bg="black",fg="white")
+
+    caracter.grid(row=fila, column=columna, padx=5, pady=5)
+
+    panel_letras.append(caracter)
+
+    columna += 1
+
+    if columna == 7:
+        columna = 0
+        fila += 1
+
 def traducir(frase):
 
-    letras = frase.split(" ") #Hacerlo lista
+    letras = frase.split(" ")
 
     texto_tradcido = "" 
 
     for letra in letras:
 
         if letra in morse:
-            texto_tradcido = texto_tradcido + morse[letra] #Esto es para añadir las letras que sí se escriben bien para despues sumar puntos
+            texto_tradcido = texto_tradcido + morse[letra]
+
+        else:
+            texto_tradcido = texto_tradcido + "?"
 
     return texto_tradcido
 
-def agregar_frase():
+def mostrar_entries():
 
-    texto = entrada.get()
-    if len(texto) <= 16 and texto != "":
+    global entries_frases
 
-        frases.append(texto.upper())
+    for entry in entries_frases:
+        entry.destroy()
 
-        lista_label.config(text=(frases))
+    entries_frases = []
 
-        entrada.delete(0, END)
+    for palabra, frase in enumerate(frases):
+
+        frase3 = tk.Entry(pagina2, font=("Arial", 14), width=20)
+
+        frase3.insert(0, frase)
+
+        frase3.place(x=150, y=200 + palabra*30)
+
+        entries_frases.append(frase3)
+
+def guardar_cambios():
+
+    global frases
+
+    nuevas_frases = []
+
+    for entry in entries_frases:
+
+        texto = entry.get().upper()
+
+        if texto != "":
+            nuevas_frases.append(texto)
+
+    frases = nuevas_frases
+
+    mostrar_entries()
+
+    iniciar_juego()
+
+def iluminar_frase(frase, indice=0):
+
+    if indice >= len(frase):
+        return
+
+    letra = frase[indice]
+
+    if letra in abecedario:
+
+        posicion = abecedario.index(letra)
+
+        panel_letras[posicion].config(bg="red", fg="black")
+
+        def apagar():
+
+            panel_letras[posicion].config(bg="black", fg="white")
+
+            iluminar_frase(frase, indice + 1)
+
+        ventana.after(1000, apagar)
 
     else:
+        iluminar_frase(frase, indice + 1)
 
-        lista_label.config(text="Máximo 16 caracteres")
-
-    if len(frases) == 10:
-
-        iniciar_juego()
-
- 
 def iniciar_juego():
 
     global frase_juego
 
     frase_juego = random.choice(frases)
 
-    frase_label.config(text="Frase: " + frase_juego)
+    iluminar_frase(frase_juego)
 
+    print(frase_juego)
 
-def presionar(tiempo2):   #Es para contar el tiempo que dura presionado, el time.time cuenta desde una fecha específica, aquíes del 31 de diciembre de 1969 a las 6
+def presionar(tiempo2):
+
     global inicio, boton_apretado
+
     inicio = time.time()
+
     boton_apretado=True
 
+def soltar(tiempo2):
 
-def soltar(tiempo2): #Depende de cuanto tiempo se presiona detecta si es un punto o una raya
-
-    global inicio, texto_morse, tiempo_pausas, esperando, boton_apretado, valor_correcto, valor_real,puntos_precision,precision_total
+    global inicio, texto_morse, tiempo_pausas, esperando, boton_apretado, valor_correcto, valor_real, puntos_precision,precision_total
 
     tiempo3 = time.time() - inicio
 
     if tiempo3 <= 1:
+
         texto_morse = texto_morse + "."
         valor_correcto=1
-        
- 
+
     else:
+
         texto_morse = texto_morse + "-"
         valor_correcto=3
-    
-    valor_real=tiempo3
-    error= abs(valor_correcto-valor_real)
-    precision= max(0, 100-(error*100))  #Se usa el error como porcentaje
 
-    
+    valor_real=tiempo3
+
+    error= abs(valor_correcto-valor_real)
+
+    precision= max(0, 100-(error*100))
+
     if precision>=70:
         puntos_precision=2
+
     elif precision< 70 and precision>=30:
         puntos_precision=1
+
     else:
         puntos_precision=0
-    
 
     precision_total+=puntos_precision
+
     print(precision_total)
 
+    Puntaje.config(text=f"Puntos: {precision_total}")
 
     tiempo_pausas= time.time()
+
     esperando=True
     boton_apretado=False
 
@@ -167,69 +277,81 @@ def pausas():
     fin_pausa = time.time()
 
     if boton_apretado:
-        ventana.after(200, pausas)   #Evita silencios falsos
+
+        ventana.after(200, pausas)
         return
 
     if esperando:
 
         pausa = fin_pausa - tiempo_pausas
 
-        if pausa > 2 and pausa < 4: #El valor es de 3 pero se puso por que no siempre va a ser preciso
+        if pausa > 2 and pausa < 4:
+
             if len(texto_morse) > 0 and texto_morse[-1]!=" ":
+
                 texto_morse += " "
+
                 pantalla.config(text=texto_morse)
 
         elif pausa >= 4:
+
             if len(texto_morse) > 0 and texto_morse[-1] != "/":
+
                 texto_morse += "/"
+
                 pantalla.config(text=texto_morse)
-                
 
-    ventana.after(200, pausas) #Para que vaya revisando las pausas constantemente
+    ventana.after(200, pausas)
 
-def quitar_espacios(frase):         #Se quitan para evaluar solo la frase
+def quitar_espacios(frase):
+
     frase = frase.replace("/", "")
     frase = frase.replace(" ", "")
-    return frase
 
+    return frase
 
 def evaluar():
 
     global texto_morse, precision_total, puntos_totales
+
     traducido = traducir(texto_morse)
 
-    objetivo = frase_juego.replace(" ", "") 
+    objetivo = frase_juego.replace(" ", "")
+
     traducido = traducido.replace("/", "").replace(" ", "")
+
+    traducido = traducido.strip()
+    objetivo = objetivo.strip()
 
     puntos_texto = 0
 
-    for letra in range(len(traducido)):
+    for i in range(len(traducido)):
 
-        if letra < len(objetivo):
+        if i < len(objetivo):
 
-            if traducido[letra] == objetivo[letra]:
-                puntos_texto += 1 
-            else:
-                puntos_texto += 0    
+            if traducido[i] == objetivo[i]:
 
-        else:
-            puntos_texto += 0       
+                puntos_texto += 1
 
+    print("Traducido:", traducido)
+    print("Objetivo:", objetivo)
+    print("Puntos texto:", puntos_texto)
 
-    puntos_totales=puntos_texto+ precision_total
+    traducido_label.config(text=f"Traducido: {traducido}")
 
-    resultado.config(text="Puntos totales: " + str(puntos_totales))
+    objetivo_label.config(text=f"Objetivo: {objetivo}")
+
+    puntos_label.config(text=f"Puntos texto: {puntos_texto}")
+
+    puntos_totales = puntos_texto + precision_total
+
+    resultado.config(text=f"Puntos totales: {puntos_totales}")
+
     turnos()
-
 
 def turnos():
 
-    global jugador1, jugador2
-    global puntos_jugador1, puntos_jugador2
-    global puntos_totales
-    global texto_morse
-    global precision_total
-
+    global jugador1, jugador2, puntos_jugador1, puntos_jugador2, puntos_totales, texto_morse, precision_total
 
     if jugador1 == True:
 
@@ -238,91 +360,119 @@ def turnos():
         jugador1 = False
         jugador2 = True
 
-        resultado.config(
-            text="Turno jugador 2"
-        )
-
+        resultado.config(text="Turno jugador 2")
 
     elif jugador2 == True:
 
         puntos_jugador2 = puntos_totales
 
-        # ganador
         if puntos_jugador1 > puntos_jugador2:
 
-            resultado.config(
-                text="Ganó jugador 1"
-            )
+            resultado.config(text="Ganó jugador 1")
 
         elif puntos_jugador2 > puntos_jugador1:
 
-            resultado.config(
-                text="Ganó jugador 2"
-            )
+            resultado.config(text="Ganó jugador 2")
 
         else:
 
-            resultado.config(
-                text="Empate"
-            )
+            resultado.config(text="Empate")
 
     texto_morse = ""
     precision_total = 0
 
     pantalla.config(text="")
 
-    def nueva_ronda():
+inicio_label = tk.Label(
+    pagina2,
+    text="Selecciona Modo de Juego",
+    font=("Times New Roman",30),
+    fg="black",
+    bg="#5C2C31"
+)
+inicio_label.place(x=80,y=30)
 
-        global texto_morse
-        global precision_total
-        global puntos_totales
-        global frase_juego
+Puntaje = tk.Label(
+    pagina4,
+    text="Puntos: ",
+    font=("Times New Roman", 24)
+)
+Puntaje.place(x=100, y=0)
 
-        texto_morse = ""
-        precision_total = 0
-        puntos_totales = 0
+pantalla = tk.Label(pagina4,text="",font=("Times New Roman", 30),bg="white",width=25,height=2)
+pantalla.place(x=290,y=200)
 
-        pantalla.config(text="")
-        resultado.config(text="")
+turno1=tk.Label(pagina3, text="Turno Jugador 1", font=("Times New Roman",80), bg="#5C2C31")
+turno1.place(x=200,y=300)
 
-        frase_juego = random.choice(frases)
-
-        frase_label.config(
-            text="Frase: " + frase_juego)
-
-
-
-
-
-entrada = tk.Entry(pagina2, font=("Arial",20), width=30)
-entrada.place(x=0,y=10)
-
-agregar=Button(pagina2,text="Agregar frase",command=agregar_frase)
-agregar.place(x=200,y=20)
-
-lista_label = tk.Label(pagina2, text="")
-lista_label.place(x=500,y=50)
-
-
-
-frase_label = tk.Label(pagina3,text="Frase: " + frase_juego, font=("Arial", 24))
-frase_label.place(x=100, y=0)
-
-pantalla = tk.Label(pagina3, text="", font=("Arial", 30), bg="white", width=25, height=2)
-pantalla.place(x=600,y=0)
-
-resultado = tk.Label(pagina3, text="", font=("Arial", 20))
+resultado = tk.Label(
+    pagina5,
+    text="",
+    font=("Times New Roman", 20)
+)
 resultado.place(x=300, y=80)
 
-boton = tk.Button(pagina3, text="Mantener presionado", width=25, height=4, bg="lightblue")
-boton.place(x=900,y=0)
+traducido_label = tk.Label(
+    pagina5,
+    text="",
+    font=("Times New Roman", 18),
+    bg="#0C414B",
+    fg="white"
+)
+traducido_label.place(x=300, y=120)
+
+objetivo_label = tk.Label(
+    pagina5,
+    text="",
+    font=("Times New Roman", 18),
+    bg="#0C414B",
+    fg="white"
+)
+objetivo_label.place(x=300, y=150)
+
+puntos_label = tk.Label(
+    pagina5,
+    text="",
+    font=("Times New Roman", 18),
+    bg="#0C414B",
+    fg="white"
+)
+puntos_label.place(x=300, y=180)
+
+boton = tk.Button(
+    pagina4,
+    text="Mantener presionado",
+    width=20,
+    height=4,
+    bg="lightblue"
+)
+boton.place(x=500,y=400)
+
+guardar=tk.Button(
+    pagina2,
+    text="Guardar Frases",
+    command=guardar_cambios,
+    width=16,
+    height=2
+)
+guardar.place(x=570,y=549)
 
 boton.bind("<ButtonPress-1>", presionar)
 boton.bind("<ButtonRelease-1>", soltar)
 
+puntos_boton=Button(
+    pagina4,
+    text="Evaluar",
+    command=evaluar,
+    width=10,
+    height=2
+)
+puntos_boton.place(x=530,y=350)
 
-puntos_boton=Button(pagina3, text="Evaluar", command=evaluar)
-puntos_boton.place(x=0,y=100)
+mostrar_entries()
+
 pausas()
+
 mostrar_frame(pagina1)
+
 ventana.mainloop()
