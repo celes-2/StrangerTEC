@@ -1,8 +1,79 @@
+import socket
 import tkinter as tk
 from tkinter import *
 import time
 import random
 from os import path
+import threading
+
+client_socket = None
+conexion_activa = False
+unidad=0.2
+puntos_raspberry=0
+
+def servidor():
+    global client_socket, conexion_activa
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('0.0.0.0', 8001))
+    server_socket.listen(1)
+
+    print("Servidor listo... esperando conexión")
+
+    client_socket, addr = server_socket.accept()
+    conexion_activa = True
+    print("Conectado con:", addr)
+
+    while True:
+        try:
+            data = client_socket.recv(1024)
+
+            if not data:
+                print("Cliente desconectado")
+                break
+
+            mensaje = data.decode()
+            print("Recibido:", mensaje)
+
+            if mensaje.startswith("Puntos totales: "):
+                global puntos_raspberry
+                try:
+                    partes = mensaje.split(",")
+                    puntos_raspberry = int(partes[0].replace("Puntos totales:", "").strip())
+                    puntos_texto_rasp = int(partes[1].replace("Puntos texto:", "").strip())
+                    puntos_precision_rasp = int(partes[2].replace("Puntos precisión:", "").strip())
+                    mensaje_rasp = partes[3].replace("Mensaje:", "").strip()
+
+                    resultado2.config(text=f"Puntos Raspberry: {puntos_raspberry}")
+                    texto_rasp_label.config(text=f"Puntos texto: {puntos_texto_rasp}")
+                    precision_rasp_label.config(text=f"Puntos precisión: {puntos_precision_rasp}")
+                    mensaje_rasp_label.config(text=f"Mensaje: {mensaje_rasp}")
+                    turno1.config(text=f"Puntos: {puntos_raspberry}")
+
+                    if puntos_jugador1 > puntos_raspberry:
+                        resultado.config(text=f"Ganó Jugador 1 ({puntos_jugador1} vs {puntos_raspberry})")
+                    elif puntos_raspberry > puntos_jugador1:
+                        resultado.config(text=f"Ganó Jugador 2 ({puntos_raspberry} vs {puntos_jugador1})")
+                    else:
+                        resultado.config(text=f"Empate ({puntos_jugador1} vs {puntos_raspberry})")
+
+
+                    siguiente3.config(state="normal")
+
+                except:
+                    pass
+
+            elif mensaje == "Esperando frase":
+                response = f"FRASE:{frase_juego}"
+                client_socket.sendall(response.encode())
+
+        except Exception as e:
+            print("Error en servidor:", e)
+            break
+
+    client_socket.close()
+    server_socket.close()
+
 
 ventana=tk.Tk()
 ventana.title("StrangerTEC")
@@ -11,13 +82,17 @@ ventana.resizable(width=NO, height=NO)
 
 def mostrar_frame(frame):
     frame.tkraise()
-    pagina3
+    siguiente2.config(state="disabled")
 
 
 def cargar_img(nombre):
     ruta  = path.join('imagenes', nombre) 
     img = PhotoImage(file=ruta)          
     return img
+
+def boton():
+    siguiente3.config(state="normal")
+
 
 pagina1=tk.Frame(ventana,bg="gray")
 pagina2=tk.Frame(ventana,bg="gray")
@@ -44,8 +119,8 @@ siguiente3.place(x=350,y=550)
 siguiente1=tk.Button(pagina1, text="INICIO", command=lambda: mostrar_frame(pagina2),width=12, height=2)
 siguiente1.place(x=550,y=600)
 
-siguiente2=tk.Button(pagina2, text="Siguiente2", command=lambda: mostrar_frame(pagina3),width=12, height=2)
-siguiente2.place(x=350,y=550)
+siguiente2=tk.Button(pagina2, text="Siguiente2", command=lambda: mostrar_frame(pagina3),width=15, height=2)
+siguiente2.place(x=900,y=350)
 siguiente4=tk.Button(pagina4, text="Siguiente4", command=lambda: mostrar_frame(pagina5),width=12, height=2)
 siguiente4.place(x=350,y=550)
 siguiente5=tk.Button(pagina5, text="Siguiente5", command=lambda: mostrar_frame(pagina1),width=12, height=2)
@@ -72,7 +147,7 @@ for frame in (pagina1,pagina2,pagina3,pagina4,pagina5):
 ventana.grid_rowconfigure(0, weight=1)
 ventana.grid_columnconfigure(0, weight=1)
 
-frases1=["HOLA","SADSA","SRFGB","HMBKJ","GJKM","DTFHN","DYTHGN","GHV","TYFHG","FGHVGJ"]
+frases1=["HOLA","ADIOS","SOS","SI","NO","DTFHN","DYTHGN","GHV","TYFHG","FGHVGJ"]
 frases=frases1.copy()
 
 frase_juego = ""
@@ -107,7 +182,7 @@ morse = {
 }
 
 frame_panel = tk.Frame(pagina2, bg="gray")
-frame_panel.place(x=500, y=200)
+frame_panel.place(x=600, y=200)
 
 abecedario = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ1234567890+-"
 
@@ -116,7 +191,7 @@ panel_letras = []
 fila = 0
 columna = 0
 
-for letra in abecedario: #Panel de letras
+for letra in abecedario:
 
     caracter = tk.Label(frame_panel,text=letra,font=("Times New Roman",10),width=3,height=2,bg="black",fg="white")
 
@@ -161,7 +236,7 @@ def mostrar_entries():
 
         frase3.insert(0, frase)
 
-        frase3.place(x=150, y=200 + palabra*30)
+        frase3.place(x=100, y=200 + palabra*30)
 
         entries_frases.append(frase3)
 
@@ -208,13 +283,54 @@ def iluminar_frase(frase, indice=0):
     else:
         iluminar_frase(frase, indice + 1)
 
+def enviar_frase(frase):
+    if conexion_activa:
+        msg = f"FRASE:{frase}"
+        client_socket.sendall(msg.encode())
+
+
+def enviar_modo(modo):
+    guardar_cambios()
+    velocidad_juego()
+    enviar_velocidad()
+    time.sleep(0.1)
+    if client_socket:
+        client_socket.sendall(f"MODO:{modo}\n".encode())
+    time.sleep(0.1)           
+    siguiente2.config(state="normal")
+    iniciar_juego()
+    enviar_frase(frase_juego)     
+    if modo == "LEDS":
+        iluminar_frase(frase_juego)
+velocidad2 = tk.IntVar()
+
+
+velocidad2 = tk.IntVar(value=1)
+
+nivel1 = tk.Radiobutton(pagina2, text="Nivel 1", variable=velocidad2, value=1, width=10, height=2)
+nivel2 = tk.Radiobutton(pagina2, text="Nivel 2", variable=velocidad2, value=2, width=10, height=2)
+nivel1.place(x=400,y=220)
+nivel2.place(x=400,y=290)
+
+def velocidad_juego():
+    global unidad
+    velocidad = velocidad2.get()
+    if velocidad == 1:
+        unidad = 0.2
+    else:
+        unidad = 0.3
+
+def enviar_velocidad():
+    if client_socket:
+        client_socket.sendall(f"VELOCIDAD:{unidad}".encode())
+
+
 def iniciar_juego():
 
     global frase_juego
 
     frase_juego = random.choice(frases)
 
-    iluminar_frase(frase_juego)
 
     print(frase_juego)
 
@@ -232,17 +348,14 @@ def soltar(tiempo2):
 
     tiempo3 = time.time() - inicio
 
-    if tiempo3 <= 1:
-
+    if tiempo3 <= unidad:
         texto_morse = texto_morse + "."
-        valor_correcto=1
-
+        valor_correcto = unidad
     else:
-
         texto_morse = texto_morse + "-"
-        valor_correcto=3
+        valor_correcto = unidad * 3
 
-    valor_real=tiempo3
+        valor_real=tiempo3
 
     error= abs(valor_correcto-valor_real)
 
@@ -383,20 +496,16 @@ def turnos():
 
     pantalla.config(text="")
 
-inicio_label = tk.Label(
-    pagina2,
-    text="Selecciona Modo de Juego",
-    font=("Times New Roman",30),
-    fg="black",
-    bg="#5C2C31"
-)
+inicio_label = tk.Label(pagina2,text="Selecciona Modo de Juego",font=("Times New Roman",30),fg="black",bg="#5C2C31")
 inicio_label.place(x=80,y=30)
 
-Puntaje = tk.Label(
-    pagina4,
-    text="Puntos: ",
-    font=("Times New Roman", 24)
-)
+frases_label = tk.Label(pagina2,text="Frases",font=("Times New Roman",28),fg="black",bg="#5C2C31")
+frases_label.place(x=140,y=140)
+
+velocidad_labl = tk.Label(pagina2,text="Velocidad",font=("Times New Roman",28),fg="black",bg="#5C2C31")
+velocidad_labl.place(x=370,y=140)
+
+Puntaje = tk.Label(pagina4,text="Puntos: ",font=("Times New Roman", 24))
 Puntaje.place(x=100, y=0)
 
 pantalla = tk.Label(pagina4,text="",font=("Times New Roman", 30),bg="white",width=25,height=2)
@@ -405,74 +514,49 @@ pantalla.place(x=290,y=200)
 turno1=tk.Label(pagina3, text="Turno Jugador 1", font=("Times New Roman",80), bg="#5C2C31")
 turno1.place(x=200,y=300)
 
-resultado = tk.Label(
-    pagina5,
-    text="",
-    font=("Times New Roman", 20)
-)
+resultado = tk.Label(pagina5,text="",font=("Times New Roman", 20))
 resultado.place(x=300, y=80)
 
-traducido_label = tk.Label(
-    pagina5,
-    text="",
-    font=("Times New Roman", 18),
-    bg="#0C414B",
-    fg="white"
-)
+resultado2 = tk.Label(pagina5,text="",font=("Times New Roman", 20))
+resultado2.place(x=500, y=80)
+
+traducido_label = tk.Label(pagina5,text="",font=("Times New Roman", 18),bg="#0C414B",fg="white")
 traducido_label.place(x=300, y=120)
 
-objetivo_label = tk.Label(
-    pagina5,
-    text="",
-    font=("Times New Roman", 18),
-    bg="#0C414B",
-    fg="white"
-)
+objetivo_label = tk.Label(pagina5,text="",font=("Times New Roman", 18),bg="#0C414B",fg="white")
 objetivo_label.place(x=300, y=150)
 
-puntos_label = tk.Label(
-    pagina5,
-    text="",
-    font=("Times New Roman", 18),
-    bg="#0C414B",
-    fg="white"
-)
+puntos_label = tk.Label(pagina5,text="",font=("Times New Roman", 18),bg="#0C414B",fg="white")
 puntos_label.place(x=300, y=180)
 
-boton = tk.Button(
-    pagina4,
-    text="Mantener presionado",
-    width=20,
-    height=4,
-    bg="lightblue"
-)
-boton.place(x=500,y=400)
+texto_rasp_label = tk.Label(pagina5, text="", font=("Times New Roman", 18), bg="#0C414B", fg="white")
+texto_rasp_label.place(x=300, y=210)
 
-guardar=tk.Button(
-    pagina2,
-    text="Guardar Frases",
-    command=guardar_cambios,
-    width=16,
-    height=2
-)
-guardar.place(x=570,y=549)
+precision_rasp_label = tk.Label(pagina5, text="", font=("Times New Roman", 18), bg="#0C414B", fg="white")
+precision_rasp_label.place(x=300, y=240)
+
+mensaje_rasp_label = tk.Label(pagina5, text="", font=("Times New Roman", 18), bg="#0C414B", fg="white")
+mensaje_rasp_label.place(x=300, y=270)
+
+boton = tk.Button(pagina4,text="Mantener presionado",width=20,height=4,bg="lightblue")
+boton.place(x=500,y=400)
 
 boton.bind("<ButtonPress-1>", presionar)
 boton.bind("<ButtonRelease-1>", soltar)
 
-puntos_boton=Button(
-    pagina4,
-    text="Evaluar",
-    command=evaluar,
-    width=10,
-    height=2
-)
+puntos_boton=Button(pagina4,text="Evaluar",command=evaluar,width=10,height=2)
 puntos_boton.place(x=530,y=350)
+
+buzzer = tk.Button(pagina2,text="Modo Escucha",command=lambda: enviar_modo("BUZZER"),width=15,height=2)
+buzzer.place(x=900, y=300)
+
+leds = tk.Button(pagina2,text="Modo Simple",command=lambda: enviar_modo("LEDS"),width=15,height=2)
+leds.place(x=900, y=250)
 
 mostrar_entries()
 
 pausas()
 
 mostrar_frame(pagina1)
-
+threading.Thread(target=servidor, daemon=True).start()
 ventana.mainloop()
