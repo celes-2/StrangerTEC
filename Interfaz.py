@@ -35,7 +35,7 @@ def servidor():
             mensaje = data.decode()
             print("Recibido:", mensaje)
 
-            if mensaje.startswith("Puntos totales: "):
+            if mensaje.startswith("Puntos totales:"):
                 global puntos_raspberry
                 try:
                     partes = mensaje.split(",")
@@ -44,25 +44,27 @@ def servidor():
                     puntos_precision_rasp = int(partes[2].replace("Puntos precisión:", "").strip())
                     mensaje_rasp = partes[3].replace("Mensaje:", "").strip()
 
-                    resultado2.config(text=f"Puntos Raspberry: {puntos_raspberry}")
-                    texto_rasp_label.config(text=f"Puntos texto: {puntos_texto_rasp}")
-                    precision_rasp_label.config(text=f"Puntos precisión: {puntos_precision_rasp}")
-                    mensaje_rasp_label.config(text=f"Mensaje: {mensaje_rasp}")
-                    turno1.config(text=f"Puntos: {puntos_raspberry}")
+                    def actualizar_ui():
+                        resultado2.config(text=f"Puntos Raspberry: {puntos_raspberry}")
+                        texto_rasp_label.config(text=f"Puntos texto: {puntos_texto_rasp}")
+                        precision_rasp_label.config(text=f"Puntos precisión: {puntos_precision_rasp}")
+                        mensaje_rasp_label.config(text=f"Mensaje: {mensaje_rasp}")
+                        siguiente3.config(state="normal")
 
-                    if puntos_jugador1 > puntos_raspberry:
-                        resultado.config(text=f"Ganó Jugador 1 ({puntos_jugador1} vs {puntos_raspberry})")
-                    elif puntos_raspberry > puntos_jugador1:
-                        resultado.config(text=f"Ganó Jugador 2 ({puntos_raspberry} vs {puntos_jugador1})")
-                    else:
-                        resultado.config(text=f"Empate ({puntos_jugador1} vs {puntos_raspberry})")
+                    ventana.after(0, actualizar_ui)
 
+                except Exception as e:
+                    print("Error parseando puntos:", e)
+            elif mensaje.startswith("Precision:"):
+                try:
+                    puntos_parciales = int(mensaje.replace("Precision:", "").strip())
 
-                    siguiente3.config(state="normal")
+                    def actualizar_parcial():
+                        turno1.config(text=f"Puntos Raspberry: {puntos_parciales}")
 
-                except:
-                    pass
-
+                    ventana.after(0, actualizar_parcial)
+                except Exception as e:
+                    print("Error parcial:", e)
             elif mensaje == "Esperando frase":
                 response = f"FRASE:{frase_juego}"
                 client_socket.sendall(response.encode())
@@ -89,7 +91,6 @@ def cargar_img(nombre):
     ruta  = path.join('imagenes', nombre) 
     img = PhotoImage(file=ruta)          
     return img
-
 def boton():
     siguiente3.config(state="normal")
 
@@ -113,18 +114,18 @@ canvas5.place(x=0,y=0)
 
 
 
-siguiente3=tk.Button(pagina3, text="volver", command=lambda: mostrar_frame(pagina4),width=12, height=2)
-siguiente3.place(x=350,y=550)
-
+siguiente3=tk.Button(pagina3, text="Inicio Jugador 2", command=lambda: mostrar_frame(pagina4),width=12, height=2)
+siguiente3.place(x=550,y=550)
+siguiente3.config(state="disabled")
 siguiente1=tk.Button(pagina1, text="INICIO", command=lambda: mostrar_frame(pagina2),width=12, height=2)
 siguiente1.place(x=550,y=600)
 
-siguiente2=tk.Button(pagina2, text="Siguiente2", command=lambda: mostrar_frame(pagina3),width=15, height=2)
+siguiente2=tk.Button(pagina2, text="Inicio Turno 1", command=lambda: mostrar_frame(pagina3),width=15, height=2)
 siguiente2.place(x=900,y=350)
 siguiente4=tk.Button(pagina4, text="Siguiente4", command=lambda: mostrar_frame(pagina5),width=12, height=2)
 siguiente4.place(x=350,y=550)
-siguiente5=tk.Button(pagina5, text="Siguiente5", command=lambda: mostrar_frame(pagina1),width=12, height=2)
-siguiente5.place(x=350,y=550)
+siguiente5=tk.Button(pagina5, text="Nueva Ronda", command=lambda:nueva_ronda(), width=12, height=2)
+siguiente5.place(x=550,y=500)
 
 canvas1.fondo = cargar_img('fondos4.png')
 Fondo1 = canvas1.create_image(0, 0, anchor=NW,  image=canvas1.fondo)
@@ -147,7 +148,7 @@ for frame in (pagina1,pagina2,pagina3,pagina4,pagina5):
 ventana.grid_rowconfigure(0, weight=1)
 ventana.grid_columnconfigure(0, weight=1)
 
-frases1=["HOLA","ADIOS","SOS","SI","NO","DTFHN","DYTHGN","GHV","TYFHG","FGHVGJ"]
+frases1=["HOLA","ADIOS","SOS","SI","NO","TAL VEZ","CAFE","SUEÑO","TEC","AVEJA"]
 frases=frases1.copy()
 
 frase_juego = ""
@@ -302,9 +303,9 @@ def enviar_modo(modo):
     enviar_frase(frase_juego)     
     if modo == "LEDS":
         iluminar_frase(frase_juego)
+
+
 velocidad2 = tk.IntVar()
-
-
 velocidad2 = tk.IntVar(value=1)
 
 nivel1 = tk.Radiobutton(pagina2, text="Nivel 1", variable=velocidad2, value=1, width=10, height=2)
@@ -330,6 +331,7 @@ def iniciar_juego():
     global frase_juego
 
     frase_juego = random.choice(frases)
+    frase_label.config(text=f"Frase de la ronda: {frase_juego}")
 
 
     print(frase_juego)
@@ -355,7 +357,7 @@ def soltar(tiempo2):
         texto_morse = texto_morse + "-"
         valor_correcto = unidad * 3
 
-        valor_real=tiempo3
+    valor_real=tiempo3
 
     error= abs(valor_correcto-valor_real)
 
@@ -450,9 +452,9 @@ def evaluar():
     print("Objetivo:", objetivo)
     print("Puntos texto:", puntos_texto)
 
-    traducido_label.config(text=f"Traducido: {traducido}")
+    traducido_label.config(text=f"Mensaje: {traducido}")
 
-    objetivo_label.config(text=f"Objetivo: {objetivo}")
+    objetivo_label.config(text=f"Puntos Precision: {precision_total}")
 
     puntos_label.config(text=f"Puntos texto: {puntos_texto}")
 
@@ -461,40 +463,51 @@ def evaluar():
     resultado.config(text=f"Puntos totales: {puntos_totales}")
 
     turnos()
+    mostrar_frame(pagina5)
 
 def turnos():
+    global puntos_jugador1, puntos_totales, texto_morse, precision_total
 
-    global jugador1, jugador2, puntos_jugador1, puntos_jugador2, puntos_totales, texto_morse, precision_total
+    puntos_jugador1 = puntos_totales 
 
-    if jugador1 == True:
+    if puntos_jugador1 > puntos_raspberry:
+        resultado_final.config(text=f"Resultado: Ganó Jugador Servidor")
+    elif puntos_raspberry > puntos_jugador1:
+        resultado_final.config(text=f"Resultado: Ganó Jugador Raspberry")
+    else:
+        resultado_final.config(text=f"Resultado: Empate")
 
-        puntos_jugador1 = puntos_totales
-
-        jugador1 = False
-        jugador2 = True
-
-        resultado.config(text="Turno jugador 2")
-
-    elif jugador2 == True:
-
-        puntos_jugador2 = puntos_totales
-
-        if puntos_jugador1 > puntos_jugador2:
-
-            resultado.config(text="Ganó jugador 1")
-
-        elif puntos_jugador2 > puntos_jugador1:
-
-            resultado.config(text="Ganó jugador 2")
-
-        else:
-
-            resultado.config(text="Empate")
+    texto_morse = ""
+    precision_total = 0
+    pantalla.config(text="")
 
     texto_morse = ""
     precision_total = 0
 
     pantalla.config(text="")
+
+def nueva_ronda():
+        global jugador1, jugador2, puntos_jugador1, puntos_raspberry, texto_morse, precision_total, puntos_totales
+
+        jugador1 = True
+        jugador2 = False
+        puntos_jugador1 = 0
+        puntos_raspberry = 0
+        texto_morse = ""
+        precision_total = 0
+        puntos_totales = 0
+
+        resultado.config(text="")
+        resultado2.config(text="")
+        traducido_label.config(text="")
+        objetivo_label.config(text="")
+        puntos_label.config(text="")
+        texto_rasp_label.config(text="")
+        precision_rasp_label.config(text="")
+        mensaje_rasp_label.config(text="")
+        pantalla.config(text="")
+
+        mostrar_frame(pagina2)
 
 inicio_label = tk.Label(pagina2,text="Selecciona Modo de Juego",font=("Times New Roman",30),fg="black",bg="#5C2C31")
 inicio_label.place(x=80,y=30)
@@ -514,29 +527,39 @@ pantalla.place(x=290,y=200)
 turno1=tk.Label(pagina3, text="Turno Jugador 1", font=("Times New Roman",80), bg="#5C2C31")
 turno1.place(x=200,y=300)
 
-resultado = tk.Label(pagina5,text="",font=("Times New Roman", 20))
-resultado.place(x=300, y=80)
+resultado_final = tk.Label(pagina5,text="Resultados de la ronda: ",font=("Times New Roman", 20))
+resultado_final.place(x=400, y=50)
+frase_label = tk.Label(pagina5,text=f"Frase de la ronda: {frase_juego}",font=("Times New Roman", 20))
+frase_label.place(x=400, y=100)
 
-resultado2 = tk.Label(pagina5,text="",font=("Times New Roman", 20))
-resultado2.place(x=500, y=80)
+#Jugador Rasp
+mensaje_rasp_label = tk.Label(pagina5, text="Recibido:", font=("Times New Roman", 18), bg="#0C414B", fg="white")
+mensaje_rasp_label.place(x=600, y=350)
 
-traducido_label = tk.Label(pagina5,text="",font=("Times New Roman", 18),bg="#0C414B",fg="white")
-traducido_label.place(x=300, y=120)
+resultado2 = tk.Label(pagina5,text="Puntos totales:",font=("Times New Roman", 20))
+resultado2.place(x=600, y=300)
 
-objetivo_label = tk.Label(pagina5,text="",font=("Times New Roman", 18),bg="#0C414B",fg="white")
-objetivo_label.place(x=300, y=150)
+texto_rasp_label = tk.Label(pagina5, text="Puntos texto:", font=("Times New Roman", 18), bg="#0C414B", fg="white")
+texto_rasp_label.place(x=600, y=410)
 
-puntos_label = tk.Label(pagina5,text="",font=("Times New Roman", 18),bg="#0C414B",fg="white")
-puntos_label.place(x=300, y=180)
 
-texto_rasp_label = tk.Label(pagina5, text="", font=("Times New Roman", 18), bg="#0C414B", fg="white")
-texto_rasp_label.place(x=300, y=210)
+precision_rasp_label = tk.Label(pagina5, text="Puntos precision:", font=("Times New Roman", 18), bg="#0C414B", fg="white")
+precision_rasp_label.place(x=600, y=380)
 
-precision_rasp_label = tk.Label(pagina5, text="", font=("Times New Roman", 18), bg="#0C414B", fg="white")
-precision_rasp_label.place(x=300, y=240)
+#Jgador compu
 
-mensaje_rasp_label = tk.Label(pagina5, text="", font=("Times New Roman", 18), bg="#0C414B", fg="white")
-mensaje_rasp_label.place(x=300, y=270)
+traducido_label = tk.Label(pagina5,text="Recibido 2",font=("Times New Roman", 18),bg="#0C414B",fg="white")
+traducido_label.place(x=300, y=350)
+
+resultado = tk.Label(pagina5,text="Puntos totales2:",font=("Times New Roman", 20))
+resultado.place(x=300, y=300)
+
+puntos_label = tk.Label(pagina5,text="Puntos texto2:",font=("Times New Roman", 18),bg="#0C414B",fg="white")
+puntos_label.place(x=300, y=410)
+
+objetivo_label = tk.Label(pagina5,text="Puntos precision2:",font=("Times New Roman", 18),bg="#0C414B",fg="white")
+objetivo_label.place(x=300, y=380)
+
 
 boton = tk.Button(pagina4,text="Mantener presionado",width=20,height=4,bg="lightblue")
 boton.place(x=500,y=400)
