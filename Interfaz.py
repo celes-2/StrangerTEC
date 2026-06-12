@@ -84,7 +84,6 @@ ventana.resizable(width=NO, height=NO)
 
 def mostrar_frame(frame):
     frame.tkraise()
-    siguiente2.config(state="disabled")
 
 
 def cargar_img(nombre):
@@ -116,7 +115,6 @@ canvas5.place(x=0,y=0)
 
 siguiente3=tk.Button(pagina3, text="Inicio Jugador 2", command=lambda: mostrar_frame(pagina4),width=12, height=2)
 siguiente3.place(x=550,y=550)
-siguiente3.config(state="disabled")
 siguiente1=tk.Button(pagina1, text="INICIO", command=lambda: mostrar_frame(pagina2),width=12, height=2)
 siguiente1.place(x=550,y=600)
 
@@ -182,6 +180,18 @@ morse = {
 ".....":"5","-....":"6","--...":"7","---..":"8","----.":"9","+":".-.-.","-":"-....-"
 }
 
+codigo_ascii={
+'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69,
+'F': 70, 'G': 71, 'H': 72, 'I': 73, 'J': 74,
+'K': 75, 'L': 76, 'M': 77, 'N': 78, 'O': 79,
+'P': 80, 'Q': 81, 'R': 82, 'S': 83, 'T': 84,
+'U': 85, 'V': 86, 'W': 87, 'X': 88, 'Y': 89,
+'Z': 90, '0': 48, '1': 49, '2': 50, '3': 51, 
+'4': 52,'5': 53, '6': 54, '7': 55, '8': 56, 
+'9': 57, '+': 43, '-': 45
+}
+
+
 frame_panel = tk.Frame(pagina2, bg="gray")
 frame_panel.place(x=600, y=200)
 
@@ -221,6 +231,16 @@ def traducir(frase):
             texto_tradcido = texto_tradcido + "?"
 
     return texto_tradcido
+
+def traducir_ascii(codigo):
+        codigo1= codigo_ascii[codigo]
+        print(codigo1)
+        cuatro_bits = codigo1 & 0b1111
+
+        print(format(cuatro_bits, '04b'))
+
+        
+
 
 def mostrar_entries():
 
@@ -385,6 +405,17 @@ def soltar(tiempo2):
 
     pantalla.config(text=texto_morse)
 
+    partes = texto_morse.replace("/", " / ").split()
+    traduccion = ""
+    for parte in partes:
+        if parte == "/":
+            traduccion += " "
+        elif parte in morse:
+            traduccion+= morse[parte]
+        elif parte:
+            traduccion = "?"
+
+
 def pausas():
 
     global tiempo_pausas, texto_morse, esperando, boton_apretado
@@ -408,6 +439,18 @@ def pausas():
 
                 pantalla.config(text=texto_morse)
 
+                partes = texto_morse.replace("/", " ").split()
+
+                if partes:
+                    ultimo_codigo = partes[-1]
+
+                    if ultimo_codigo in morse:
+                        letra = morse[ultimo_codigo]
+
+                        print("Letra detectada:", letra)
+
+                        traducir_ascii(letra)
+
         elif pausa >= 4:
 
             if len(texto_morse) > 0 and texto_morse[-1] != "/":
@@ -415,6 +458,8 @@ def pausas():
                 texto_morse += "/"
 
                 pantalla.config(text=texto_morse)
+
+                
 
     ventana.after(200, pausas)
 
